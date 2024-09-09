@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Marketplace Game</h1>
+            <div id="player-name">Name: </div> <!-- Новый элемент для имени игрока -->
+        </header>
+        
+        <!-- Modal HTML -->
+<div id="price-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Set Item Price</h2>
+        <input type="number" id="price-input" placeholder="Enter price" />
+        <button id="submit-price">Submit</button>
+    </div>
+</div>
+<!-- Modal for price history -->
+<div id="price-history-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-history">&times;</span>
+        <div id="price-history-details"></div>
+    </div>
+</div>
+
+
+
+        <main>
+            <section id="player-info">
+                
+            
+                <div id="gold" class="info-box">
+                    
+                </div>
+                <div id="inventory" class="info-box">
+                    <h2>Your Inventory</h2>
+                </div>
+            </section>
+            <section id="market">
+                <h2>Market</h2>
+                
+                <div id="market-items"></div>
+            </section>
+        </main>
+        <footer>
+            <p>© 2024 Marketplace Game</p>
+        </footer>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
