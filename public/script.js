@@ -150,6 +150,8 @@ let currentItemAveragePrice; // Для хранения средней цены 
 const updateUI = (data) => {
     document.getElementById('gold').textContent = `Gold: ${data.gold} 🪙`;
     document.getElementById('player-name').textContent = `Name: ${data.sellerName} `;
+    document.getElementById('level').textContent = `Level: ${data.level}`;
+    document.getElementById('experience').textContent = `Experience: ${data.experience}`;
 
     const inventoryDiv = document.getElementById('inventory');
     inventoryDiv.innerHTML = '<h2>Your Inventory</h2>';
@@ -184,6 +186,17 @@ const updateUI = (data) => {
         inventoryDiv.appendChild(itemDiv);
     });
 };
+// Функция для отображения уровня и опыта
+const displayPlayerStats = (playerData) => {
+    document.getElementById('level').textContent = `Level: ${playerData.level}`;
+    document.getElementById('experience').textContent = `Experience: ${playerData.experience}`;
+};
+
+// Обработка обновлений от сервера
+socket.on('update', (data) => {
+    updateUI(data);
+    displayPlayerStats(data);
+});
 
 submitPriceButton.onclick = () => {
     const sellPrice = parseInt(priceInput.value);
@@ -260,13 +273,6 @@ socket.on('updateMarket', (marketItems) => {
         }, 10); // Небольшая задержка для активации анимации
     });
 });
-
-
-
-
-
-
-
 
 
 // Пример генерации начальных данных с использованием случайных имен и цен

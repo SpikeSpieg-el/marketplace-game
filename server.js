@@ -16,7 +16,17 @@ const itemNames = [
     'Giant’s Club', 'Crystal Ball', 'Enchanted Shield', 'Robe', 'Staff of Fire', 'Belt of Giants', 'Boots of Stealth', 'Necklace of Healing',
     'Gauntlets', 'Boots of Flight', 'Orb of Power', 'Elixir of Life', 'Crown', 'Charm of Protection', 'Mighty Hammer', 'Mystic Tome'
 ];
+const LEVEL_EXPERIENCE_THRESHOLD = 150;
+const MAX_EXPERIENCE = 50;
+const MIN_EXPERIENCE = 25;
 
+const updatePlayerExperience = (player, experience) => {
+    player.experience = (player.experience || 0) + experience;
+    player.level = Math.floor(player.experience / LEVEL_EXPERIENCE_THRESHOLD) + 1; // Добавляем 1, чтобы уровень начинался с 1
+
+    // Отправляем обновленное состояние игрока
+    io.to(player.id).emit('update', player);
+};
 
 let players = {};
 let market = [];
@@ -85,7 +95,9 @@ const findOrCreatePlayer = (playerId) => {
             id: playerId,
             gold: 10000,
             inventory: generateRandomItems(),
-            sellerName: `Player${Math.floor(Math.random() * 1000)}` // Присваиваем случайное имя
+            sellerName: `Player${Math.floor(Math.random() * 1000)}`,
+            experience: 0,  // Инициализируем опыт
+            level: 1         // Инициализируем уровень
         };
     }
     return players[playerId];
@@ -174,31 +186,39 @@ io.on('connection', (socket) => {
     // Обновляем информацию о рынке
     socket.emit('updateMarket', market);
 
-    // Продажа предмета
-    socket.on('sell', (data) => {
-        const { itemIndex, sellPrice } = data;
-        const player = players[playerId];
+    
+    // Функция для продажи предмета
+socket.on('sell', (data) => {
+    const { itemIndex, sellPrice } = data;
+    const player = players[playerId];
 
-        if (itemIndex >= 0 && itemIndex < player.inventory.length) {
-            const item = player.inventory[itemIndex];
-            item.price = sellPrice;
-            item.seller = playerId;
+    if (itemIndex >= 0 && itemIndex < player.inventory.length) {
+        const item = player.inventory[itemIndex];
+        item.price = sellPrice;
+        item.seller = playerId;
 
         // Удаляем товар из инвентаря игрока и добавляем его на рынок
         player.inventory.splice(itemIndex, 1);
         market.push(item);
 
-            // Добавляем цену в историю цен
-            if (!priceHistory[item.name]) {
-                priceHistory[item.name] = [];
-            }
-            priceHistory[item.name].push(sellPrice);
+        // Добавляем цену в историю цен
+        if (!priceHistory[item.name]) {
+            priceHistory[item.name] = [];
+        }
+        priceHistory[item.name].push(sellPrice);
 
-            // Обновляем средние цены для всех игроков
-            const averagePrices = calculateAveragePrices();
-            io.emit('allItems', { items: itemNames, averagePrices });
+        // Расчет опыта
+        const averagePrice = calculateAveragePrices()[item.name];
+        const priceInRange = averagePrice ? (sellPrice >= averagePrice * 0.9 && sellPrice <= averagePrice * 1.1) : false;
+        const experience = priceInRange ? MAX_EXPERIENCE : MIN_EXPERIENCE;
+        updatePlayerExperience(player, experience);
+
+        // Обновляем средние цены для всех игроков
+        const averagePrices = calculateAveragePrices();
+        io.emit('allItems', { items: itemNames, averagePrices });
 
             // Обновляем рынок для всех игроков
+            
             io.emit('updateMarket', market);
             socket.emit('update', player);
         }
@@ -220,30 +240,40 @@ io.on('connection', (socket) => {
 
     // Покупка предмета
     socket.on('buy', (data) => {
-        const { itemIndex } = data;
-        const buyer = players[playerId];
-        const item = market[itemIndex];
+    const { itemIndex } = data;
+    const buyer = players[playerId];
+    const item = market[itemIndex];
 
-        if (item && buyer.gold >= item.price) {
-            buyer.gold -= item.price;
-            buyer.inventory.push(item);
+    if (item && buyer.gold >= item.price) {
+        buyer.gold -= item.price;
+        buyer.inventory.push(item);
 
-            if (item.seller !== 'Special Offer' && players[item.seller]) {
-                const seller = players[item.seller];
-                seller.gold += item.price;
-                io.to(item.seller).emit('update', seller);
-            }
+        if (item.seller !== 'Special Offer') {
+            const seller = players[item.seller];
+            seller.gold += item.price;
+            io.to(item.seller).emit('update', seller);
+        }
 
-            // Удаляем предмет с рынка
-            market.splice(itemIndex, 1);
+        // Расчет опыта
+        const averagePrice = calculateAveragePrices()[item.name];
+        const priceInRange = averagePrice ? (item.price >= averagePrice * 0.9 && item.price <= averagePrice * 1.1) : false;
+        const experience = priceInRange ? MAX_EXPERIENCE : MIN_EXPERIENCE;
+        updatePlayerExperience(buyer, experience);
+
+        // Удаляем предмет с рынка
+        market.splice(itemIndex, 1);
 
             // Обновляем состояние покупателя
             socket.emit('update', buyer);
 
+
             // Обновляем рынок для всех
             io.emit('updateMarket', market);
-        }
-    });
+        
+            // Обновляем рынок для всех
+            io.emit('updateMarket', market);
+    }
+});
 
     // Сброс состояния игры
     socket.on('resetGame', () => {
