@@ -13,6 +13,54 @@ const priceHistoryModal = document.getElementById('price-history-modal');
 const closePriceHistoryModal = document.querySelector('.close-history');
 const priceHistoryDetails = document.getElementById('price-history-details');
 
+const showAllItemsButton = document.getElementById('showAllItemsButton');
+const itemsModal = document.getElementById('items-modal');
+const closeItemsModal = document.getElementById('close-items-modal');
+const itemsDetails = document.getElementById('items-details');
+
+// Открытие модального окна
+showAllItemsButton.onclick = () => {
+    socket.emit('getAllItems');
+    itemsModal.style.display = 'block';
+};
+
+// Закрытие модального окна
+closeItemsModal.onclick = () => {
+    itemsModal.style.display = 'none';
+};
+
+window.onclick = (event) => {
+    if (event.target === itemsModal) {
+        itemsModal.style.display = 'none';
+    }
+};
+
+// Обработка ответа от сервера
+socket.on('allItems', (data) => {
+    const { items, averagePrices } = data;
+    itemsDetails.innerHTML = `
+        <h3>Items List</h3>
+        <ul>
+            ${items.map(item => `<li>${item} - Average Price: ${averagePrices[item] ? averagePrices[item].toFixed(1) + ' 🪙' : 'N/A'}</li>`).join('')}
+        </ul>
+    `;
+});
+
+
+document.getElementById('toggle-inventory').addEventListener('click', () => {
+    const inventoryDiv = document.getElementById('inventory');
+    const toggleButton = document.getElementById('toggle-inventory');
+
+    if (inventoryDiv.style.display === 'none') {
+        inventoryDiv.style.display = 'block';
+        toggleButton.textContent = 'Hide Inventory'; // Меняем текст кнопки
+    } else {
+        inventoryDiv.style.display = 'none';
+        toggleButton.textContent = 'Show Inventory'; // Меняем текст кнопки
+    }
+});
+
+
 closeModal.onclick = () => {
     modal.style.display = 'none';
 };
@@ -58,15 +106,15 @@ socket.on('priceHistory', (data) => {
 
 
 const updateUI = (data) => {
-    document.getElementById('gold').textContent = `Gold: ${data.gold}`;
-    document.getElementById('player-name').textContent = `Name: ${data.sellerName}`; // Добавлено отображение имени игрока
+    document.getElementById('gold').textContent = `Gold: ${data.gold} 🪙`;
+    document.getElementById('player-name').textContent = `Name: ${data.sellerName} `; // Добавлено отображение имени игрока
 
     const inventoryDiv = document.getElementById('inventory');
     inventoryDiv.innerHTML = '<h2>Your Inventory</h2>'; // Заголовок
     data.inventory.forEach((item, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'inventory-item';
-        itemDiv.innerHTML = `${item.name} - ${item.price} gold`;
+        itemDiv.innerHTML = `${item.name} - ${item.price} 🪙`;
 
         const sellButton = document.createElement('button');
         sellButton.textContent = 'Sell';
@@ -112,16 +160,21 @@ socket.on('update', (data) => {
 socket.on('updateMarket', (marketItems) => {
     const marketDiv = document.getElementById('market-items');
     marketDiv.innerHTML = ''; // очищаем рынок
+
+    const currentPlayerId = getCookie('playerId');
+
     marketItems.forEach((item, index) => {
         const itemDiv = document.createElement('div');
-        itemDiv.className = 'market-item';
+        itemDiv.className = item.seller === 'Special Offer' ? 'market-item special-offer' : 'market-item';
         itemDiv.innerHTML = `
-            <span>${item.name} - ${item.price} gold</span>
-            <span> (Seller: ${item.seller})</span>
+            <span>${item.name} - ${item.price} 🪙</span>
+            ${item.seller === 'Special Offer' ? `<div>Base Price: ${item.basePrice} 🪙</div><div>Discount: ${item.discount}%</div>` : ''}
+            <div> (Seller: ${item.seller})</div>
         `;
 
-        if (item.seller !== getCookie('playerId') || item.seller === 'Special Offer') { 
+        if (item.seller !== currentPlayerId) {
             const buyButton = document.createElement('button');
+            buyButton.className = 'buy-button';
             buyButton.textContent = 'Buy';
             buyButton.onclick = () => {
                 socket.emit('buy', { itemIndex: index });
@@ -130,8 +183,20 @@ socket.on('updateMarket', (marketItems) => {
         }
 
         marketDiv.appendChild(itemDiv);
+
+        // Даем время на вставку элемента в DOM перед добавлением класса для анимации
+        setTimeout(() => {
+            itemDiv.classList.add('show');
+        }, 10); // Небольшая задержка для активации анимации
     });
 });
+
+
+
+
+
+
+
 
 
 // Пример генерации начальных данных с использованием случайных имен и цен

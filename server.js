@@ -10,7 +10,13 @@ const io = socketIo(server);
 
 const PORT = 3000;
 
-const itemNames = ['Sword', 'Shield', 'Potion', 'Helmet', 'Boots', 'Bow', 'Arrows', 'Gloves', 'Armor', 'Ring'];
+const itemNames = [
+    'Sword', 'Shield', 'Potion', 'Helmet', 'Boots', 'Bow', 'Arrows', 'Gloves', 'Armor', 'Ring',
+    'MagicWand', 'Staff', 'Dagger', 'Crossbow', 'Amulet', 'Cloak', 'Scroll', 'Boots of Speed', 'Ring of Strength', 'Helmet of Wisdom',
+    'Giant’s Club', 'Crystal Ball', 'Enchanted Shield', 'Robe', 'Staff of Fire', 'Belt of Giants', 'Boots of Stealth', 'Necklace of Healing',
+    'Gauntlets', 'Boots of Flight', 'Orb of Power', 'Elixir of Life', 'Crown', 'Charm of Protection', 'Mighty Hammer', 'Mystic Tome'
+];
+
 
 let players = {};
 let market = [];
@@ -33,13 +39,14 @@ const generateMarketItems = () => {
     let items = [];
     for (let i = 0; i < 10; i++) {
         items.push({
-            name: itemNames[Math.floor(Math.random() * itemNames.length)], // Выбираем случайное имя из списка
+            name: itemNames[Math.floor(Math.random() * itemNames.length)], // Теперь будут новые предметы
             price: Math.floor(Math.random() * 20) + 20, // случайная стоимость от 20 до 40
             seller: 'exampleSeller', // Можно заменить на идентификатор продавца
         });
     }
     return items;
 };
+
 
 // Восстановление состояния игрока
 const findOrCreatePlayer = (playerId) => {
@@ -54,35 +61,48 @@ const findOrCreatePlayer = (playerId) => {
     return players[playerId];
 };
 
+
 // Функция добавления предмета по акции
 const addSpecialOffer = () => {
-    const itemName = itemNames[Math.floor(Math.random() * itemNames.length)];
-    let price = Math.floor(Math.random() * 40) + 30; // случайная стоимость от 30 до 70
+    for (let i = 0; i < 3; i++) { // Добавляем 5 специальных предложений
+        const itemName = itemNames[Math.floor(Math.random() * itemNames.length)];
+        let basePrice = Math.floor(Math.random() * 40) + 30; // случайная стоимость от 30 до 70
+        let discount = Math.floor(Math.random() * 51) + 10; // случайная скидка от 10% до 60%
 
-    // Проверяем есть ли история цен для этого предмета
-    if (priceHistory[itemName]) {
-        const avgPrice = priceHistory[itemName].reduce((sum, p) => sum + p, 0) / priceHistory[itemName].length;
-        price = Math.floor(avgPrice * 0.75); // Устанавливаем цену со скидкой 25%
+        // Проверяем есть ли история цен для этого предмета
+        if (priceHistory[itemName]) {
+            const avgPrice = priceHistory[itemName].reduce((sum, p) => sum + p, 0) / priceHistory[itemName].length;
+            basePrice = avgPrice; // Устанавливаем базовую цену по средней цене из истории
+        }
+
+        const discountedPrice = Math.floor(basePrice * (1 - discount / 100)); // Применяем скидку
+
+        const item = {
+            name: itemName,
+            price: discountedPrice,
+            basePrice: basePrice, // Добавляем базовую цену
+            discount: discount, // Добавляем информацию о скидке
+            seller: 'Special Offer'
+        };
+
+        market.push(item);
     }
 
-    const item = {
-        name: itemName,
-        price: price,
-        seller: 'Special Offer'
-    };
-
-    market.push(item);
     io.emit('updateMarket', market);
 
-    // Удаляем предмет через 60 секунд
+    // Удаляем предметы через 60 секунд
     setTimeout(() => {
-        const index = market.findIndex(m => m.name === itemName && m.seller === 'Special Offer');
-        if (index !== -1) {
-            market.splice(index, 1);
-            io.emit('updateMarket', market);
-        }
+        market = market.filter(m => m.seller !== 'Special Offer');
+        io.emit('updateMarket', market);
     }, 60000);
 };
+
+// Запуск специальных предложений каждую минуту
+setInterval(() => {
+    addSpecialOffer();
+}, 60000);
+
+
 
 // Запуск специального предложения каждую минуту
 setInterval(() => {
@@ -158,6 +178,18 @@ io.on('connection', (socket) => {
     const averagePrice = history.length > 0 ? (history.reduce((sum, p) => sum + p, 0) / history.length).toFixed(1) : 0;
 
     socket.emit('priceHistory', { itemName, history, averagePrice });
+    socket.on('getAllItems', () => {
+        const items = [...new Set(market.map(item => item.name))]; // Уникальные имена предметов
+        const averagePrices = items.reduce((acc, itemName) => {
+            const history = priceHistory[itemName] || [];
+            const avgPrice = history.length > 0 ? history.reduce((sum, p) => sum + p, 0) / history.length : 0;
+            acc[itemName] = avgPrice;
+            return acc;
+        }, {});
+        
+        socket.emit('allItems', { items, averagePrices });
+    });
+
 });
 
 

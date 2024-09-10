@@ -28,7 +28,16 @@
         <span class="close-history">&times;</span>
         <div id="price-history-details"></div>
     </div>
+</div> 
+
+<div id="items-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" id="close-items-modal">&times;</span>
+        <h2>All Items and Prices</h2>
+        <div id="items-details"></div>
+    </div>
 </div>
+
 
 
 
@@ -37,9 +46,15 @@
                 
             
                 <div id="gold" class="info-box">
-                    
+                  
                 </div>
-                <div id="inventory" class="info-box">
+                <button id="toggle-inventory">Show Inventory</button> 
+                <button id="showAllItemsButton">Show All Items and Prices</button>
+
+                <div id="inventory" style="display: block;" class="info-box">
+                    
+                    
+
                     <h2>Your Inventory</h2>
                 </div>
             </section>
