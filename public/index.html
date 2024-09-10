@@ -13,15 +13,21 @@
             <div id="player-name">Name: </div> <!-- Новый элемент для имени игрока -->
         </header>
         
-        <!-- Modal HTML -->
+<!-- Modal HTML -->
 <div id="price-modal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>
-        <h2>Set Item Price</h2>
-        <input type="number" id="price-input" placeholder="Enter price" />
-        <button id="submit-price">Submit</button>
+        <h2 id="modal-item-name"></h2> <!-- Элемент для имени предмета -->
+        <p id="modal-average-price"></p> <!-- Новый элемент для отображения средней цены -->
+        <div class="price-modal-enter_price">
+            <input type="number" id="price-input" placeholder="Enter price" />
+            <button id="submit-price">Submit</button>
+        </div>
     </div>
 </div>
+
+
+
 <!-- Modal for price history -->
 <div id="price-history-modal" class="modal">
     <div class="modal-content">
@@ -49,7 +55,7 @@
                   
                 </div>
                 <button id="toggle-inventory">Show Inventory</button> 
-                <button id="showAllItemsButton">Show All Items and Prices</button>
+                
 
                 <div id="inventory" style="display: block;" class="info-box">
                     
@@ -59,7 +65,8 @@
                 </div>
             </section>
             <section id="market">
-                <h2>Market</h2>
+                <h2>Market<button id="showAllItemsButton">Show All Items and Prices</button></h2>
+                
                 
                 <div id="market-items"></div>
             </section>

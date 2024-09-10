@@ -47,6 +47,36 @@ const generateMarketItems = () => {
     return items;
 };
 
+let lastPrices = {}; // Для отслеживания предыдущих средних цен
+
+// Функция для расчета средней цены предмета и сравнения с предыдущей ценой
+const calculateAveragePrices = () => {
+    const averagePrices = {};
+    itemNames.forEach(item => {
+        const history = priceHistory[item] || [];
+        const averagePrice = history.length > 0 ? history.reduce((sum, p) => sum + p, 0) / history.length : null;
+
+        // Проверка изменения цены
+        let priceChange = '';
+        if (lastPrices[item] !== undefined) {
+            if (averagePrice > lastPrices[item]) {
+                priceChange = '↗️'; // Увеличение цены
+            } else if (averagePrice < lastPrices[item]) {
+                priceChange = '↘️'; // Уменьшение цены
+            }
+        }
+
+        averagePrices[item] = {
+            price: averagePrice,
+            change: priceChange
+        };
+
+        // Обновляем последнюю цену
+        lastPrices[item] = averagePrice;
+    });
+    return averagePrices;
+};
+
 
 // Восстановление состояния игрока
 const findOrCreatePlayer = (playerId) => {
@@ -103,12 +133,6 @@ setInterval(() => {
 }, 60000);
 
 
-
-// Запуск специального предложения каждую минуту
-setInterval(() => {
-    addSpecialOffer();
-}, 60000);
-
 // Функция для сброса состояния игры
 const resetGame = () => {
     players = {}; // Сброс состояния игроков
@@ -130,8 +154,12 @@ app.use(express.static('public'));
 io.on('connection', (socket) => {
     console.log('New player connected:', socket.id);
 
+        // Отправляем список всех предметов и их средние цены при подключении
+        const averagePrices = calculateAveragePrices();
+        socket.emit('allItems', { items: itemNames, averagePrices });
+
     // Идентификатор игрока из cookies
-    const playerId = socket.handshake.headers.cookie && socket.handshake.headers.cookie.includes('playerId')
+    let playerId = socket.handshake.headers.cookie && socket.handshake.headers.cookie.includes('playerId')
         ? socket.handshake.headers.cookie.split('playerId=')[1]
         : uuid.v4();
 
@@ -166,32 +194,29 @@ io.on('connection', (socket) => {
             }
             priceHistory[item.name].push(sellPrice);
 
+            // Обновляем средние цены для всех игроков
+            const averagePrices = calculateAveragePrices();
+            io.emit('allItems', { items: itemNames, averagePrices });
+
             // Обновляем рынок для всех игроков
             io.emit('updateMarket', market);
             socket.emit('update', player);
         }
     });
 
-    // Обработка запроса на получение истории цен
-  socket.on('getPriceHistory', (itemName) => {
-    const history = priceHistory[itemName] || [];
-    const averagePrice = history.length > 0 ? (history.reduce((sum, p) => sum + p, 0) / history.length).toFixed(1) : 0;
+    // Получение истории цен
+    socket.on('getPriceHistory', (itemName) => {
+        const history = priceHistory[itemName] || [];
+        const averagePrice = history.length > 0 ? (history.reduce((sum, p) => sum + p, 0) / history.length).toFixed(1) : 0;
 
-    socket.emit('priceHistory', { itemName, history, averagePrice });
-    socket.on('getAllItems', () => {
-        const items = [...new Set(market.map(item => item.name))]; // Уникальные имена предметов
-        const averagePrices = items.reduce((acc, itemName) => {
-            const history = priceHistory[itemName] || [];
-            const avgPrice = history.length > 0 ? history.reduce((sum, p) => sum + p, 0) / history.length : 0;
-            acc[itemName] = avgPrice;
-            return acc;
-        }, {});
-        
-        socket.emit('allItems', { items, averagePrices });
+        socket.emit('priceHistory', { itemName, history, averagePrice });
     });
 
-});
-
+    // Получение всех предметов и их средней цены
+    socket.on('getAllItems', () => {
+        const averagePrices = calculateAveragePrices();
+        socket.emit('allItems', { items: itemNames, averagePrices });
+    });
 
     // Покупка предмета
     socket.on('buy', (data) => {
@@ -203,7 +228,7 @@ io.on('connection', (socket) => {
             buyer.gold -= item.price;
             buyer.inventory.push(item);
 
-            if (item.seller !== 'Special Offer') {
+            if (item.seller !== 'Special Offer' && players[item.seller]) {
                 const seller = players[item.seller];
                 seller.gold += item.price;
                 io.to(item.seller).emit('update', seller);
@@ -229,6 +254,7 @@ io.on('connection', (socket) => {
         console.log('Player disconnected:', playerId);
     });
 });
+
 
 
 server.listen(PORT, () => {

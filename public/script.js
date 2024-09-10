@@ -35,16 +35,55 @@ window.onclick = (event) => {
     }
 };
 
+let allItemsState = {}; // Локальное состояние для всех предметов
+
 // Обработка ответа от сервера
 socket.on('allItems', (data) => {
     const { items, averagePrices } = data;
+
+    // Обновляем состояние всех предметов
+    items.forEach(item => {
+        if (!allItemsState[item]) {
+            allItemsState[item] = {};
+        }
+
+        const newPrice = averagePrices[item].price;
+
+        // Сравниваем текущую цену с предыдущей
+        let priceChange = '';
+        if (allItemsState[item].price !== undefined) {
+            if (newPrice > allItemsState[item].price) {
+                priceChange = '↗️'; // Цена увеличилась
+            } else if (newPrice < allItemsState[item].price) {
+                priceChange = '↘️'; // Цена уменьшилась
+            }
+        }
+
+        // Обновляем состояние предмета
+        allItemsState[item].price = newPrice;
+        allItemsState[item].change = priceChange;
+    });
+
+    // Рендерим список предметов
+    renderItemsList();
+});
+
+// Функция для рендера списка предметов
+function renderItemsList() {
     itemsDetails.innerHTML = `
         <h3>Items List</h3>
         <ul>
-            ${items.map(item => `<li>${item} - Average Price: ${averagePrices[item] ? averagePrices[item].toFixed(1) + ' 🪙' : 'N/A'}</li>`).join('')}
+            ${Object.keys(allItemsState).map(item => {
+                const priceData = allItemsState[item];
+                const priceText = priceData.price ? priceData.price.toFixed(1) + ' 🪙' : 'N/A';
+                const changeText = priceData.change || ''; // Добавляем стрелку
+                return `<li>${item} - Average Price: ${priceText} ${changeText}</li>`;
+            }).join('')}
         </ul>
     `;
-});
+}
+
+
 
 
 document.getElementById('toggle-inventory').addEventListener('click', () => {
@@ -105,12 +144,16 @@ socket.on('priceHistory', (data) => {
 });
 
 
+let currentItemName; // Для хранения имени предмета
+let currentItemAveragePrice; // Для хранения средней цены предмета
+
 const updateUI = (data) => {
     document.getElementById('gold').textContent = `Gold: ${data.gold} 🪙`;
-    document.getElementById('player-name').textContent = `Name: ${data.sellerName} `; // Добавлено отображение имени игрока
+    document.getElementById('player-name').textContent = `Name: ${data.sellerName} `;
 
     const inventoryDiv = document.getElementById('inventory');
-    inventoryDiv.innerHTML = '<h2>Your Inventory</h2>'; // Заголовок
+    inventoryDiv.innerHTML = '<h2>Your Inventory</h2>';
+
     data.inventory.forEach((item, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'inventory-item';
@@ -119,9 +162,13 @@ const updateUI = (data) => {
         const sellButton = document.createElement('button');
         sellButton.textContent = 'Sell';
         sellButton.onclick = () => {
-            currentItemIndex = index; // Сохраняем индекс предмета
-            priceInput.value = ''; // Очищаем поле ввода
-            modal.style.display = 'block'; // Показываем модальное окно продажи
+            currentItemIndex = index;  // Сохраняем индекс предмета
+            currentItemName = item.name;  // Сохраняем имя предмета
+            currentItemAveragePrice = allItemsState[item.name]?.price || 'N/A'; // Сохраняем среднюю цену
+            document.getElementById('modal-item-name').textContent = `Sell ${item.name}`;  // Обновляем название предмета
+            document.getElementById('modal-average-price').textContent = `Average Market Price: ${currentItemAveragePrice} 🪙`; // Отображаем среднюю цену
+            priceInput.value = '';  // Очищаем поле ввода
+            modal.style.display = 'block';  // Показываем модальное окно
         };
 
         const historyButton = document.createElement('button');
@@ -130,13 +177,36 @@ const updateUI = (data) => {
             showPriceHistory(item.name);
         };
 
-        sellButton.style.marginLeft = '20px'; // Добавляет отступ слева
+        sellButton.style.marginLeft = '20px';
 
         itemDiv.appendChild(sellButton);
         itemDiv.appendChild(historyButton);
         inventoryDiv.appendChild(itemDiv);
     });
 };
+
+submitPriceButton.onclick = () => {
+    const sellPrice = parseInt(priceInput.value);
+    if (!isNaN(sellPrice) && sellPrice > 0) {
+        socket.emit('sell', { itemIndex: currentItemIndex, itemName: currentItemName, sellPrice });
+        modal.style.display = 'none';
+    } else {
+        alert('Please enter a valid price.');
+    }
+};
+
+
+submitPriceButton.onclick = () => {
+    const sellPrice = parseInt(priceInput.value);
+    if (!isNaN(sellPrice) && sellPrice > 0) {
+        // Отправляем как имя предмета, так и его цену
+        socket.emit('sell', { itemIndex: currentItemIndex, itemName: currentItemName, sellPrice });
+        modal.style.display = 'none';
+    } else {
+        alert('Please enter a valid price.');
+    }
+};
+
 
 // Получение cookie по имени
 function getCookie(name) {
