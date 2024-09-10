@@ -184,9 +184,9 @@ io.on('connection', (socket) => {
             item.price = sellPrice;
             item.seller = playerId;
 
-            // Удаляем товар из инвентаря игрока и добавляем его на рынок
-            player.inventory.splice(itemIndex, 1);
-            market.push(item);
+        // Удаляем товар из инвентаря игрока и добавляем его на рынок
+        player.inventory.splice(itemIndex, 1);
+        market.push(item);
 
             // Добавляем цену в историю цен
             if (!priceHistory[item.name]) {
