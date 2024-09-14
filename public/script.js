@@ -254,10 +254,11 @@ socket.on('updateMarket', (marketItems) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = item.seller === 'Special Offer' ? 'market-item special-offer' : 'market-item';
         itemDiv.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px;"/>
+            <span><img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; float: left;"/>
             <span>${item.name} - ${item.price} 🪙</span>
             ${item.seller === 'Special Offer' ? `<div>Base Price: ${item.basePrice} 🪙</div><div>Discount: ${item.discount}%</div>` : ''}
             <div> (Seller: ${item.seller})</div>
+            </span>
         `;
 
         if (item.seller !== currentPlayerId) {

@@ -118,7 +118,7 @@ const itemImages = {
     'Gloves': '/images/gloves.png',
     'Armor': '/images/armor.png',
     'Ring': '/images/ring.png',
-    'MagicWand': '/images/magic_wand.png',
+    'MagicWand': '/images/magic-wand.png',
     'Staff': '/images/staff.png',
     'Dagger': '/images/dagger.png',
     'Crossbow': '/images/crossbow.png',
