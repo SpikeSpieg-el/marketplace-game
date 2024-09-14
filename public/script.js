@@ -149,6 +149,7 @@ let currentItemAveragePrice; // Для хранения средней цены 
 
 const updateUI = (data) => {
     document.getElementById('gold').textContent = `Gold: ${data.gold} 🪙`;
+    document.getElementById('gems').textContent = `Gems: ${data.gems} 💎`;
     document.getElementById('player-name').textContent = `Name: ${data.sellerName}`;
     document.getElementById('level').textContent = `Level: ${data.level}`;
     document.getElementById('experience').textContent = `Experience: ${data.experience}`;

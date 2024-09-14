@@ -12,7 +12,7 @@ const PORT = 3000;
 
 const itemNames = [
     'Sword', 'Shield', 'Potion', 'Helmet', 'Boots', 'Bow', 'Arrows', 'Gloves', 'Armor', 'Ring',
-    'MagicWand', 'Staff', 'Dagger', 'Crossbow', 'Amulet', 'Cloak', 'Scroll', 'Boots of Speed', 'Ring of Strength', 'Helmet of Wisdom',
+    'Magic Wand', 'Staff', 'Dagger', 'Crossbow', 'Amulet', 'Cloak', 'Scroll', 'Boots of Speed', 'Ring of Strength', 'Helmet of Wisdom',
     'Baseball bat', 'Crystal Ball', 'Enchanted Shield', 'Robe', 'Staff of Fire', 'Belt of Giants', 'Boots of Stealth', 'Necklace of Healing',
     'Gauntlets', 'Boots of Flight', 'Orb of Power', 'Elixir of Life', 'Crown', 'Charm of Protection', 'Mighty Hammer', 'Mystic Tome'
 ];
@@ -27,7 +27,7 @@ const itemImages = {
     'Gloves': '/images/gloves.png',
     'Armor': '/images/armor.png',
     'Ring': '/images/ring.png',
-    'MagicWand': '/images/magic-wand.png',
+    'Magic Wand': '/images/magic-wand.png',
     'Staff': '/images/staff.png',
     'Dagger': '/images/dagger.png',
     'Crossbow': '/images/crossbow.png',
@@ -137,6 +137,7 @@ const findOrCreatePlayer = (playerId) => {
         players[playerId] = {
             id: playerId,
             gold: 10000,
+            gems: 10,
             inventory: generateRandomItems(),
             sellerName: `Player${Math.floor(Math.random() * 1000)}`,
             experience: 0,  // Инициализируем опыт
@@ -325,7 +326,7 @@ socket.on('sell', (data) => {
     }
 });
 
-    // Сброс состояния игры
+// Сброс состояния игры
 /*    
     socket.on('resetGame', () => {
         resetGame();

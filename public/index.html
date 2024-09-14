@@ -48,6 +48,18 @@
 
 
 
+<!-- Модальное окно для отображения квестов -->
+<div id="quests-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-quests">&times;</span>
+    <h2>Current Quests</h2>
+    <div id="quests-list"></div>
+  </div>
+</div>
+
+
+
+
 
         <main>
             
@@ -57,11 +69,12 @@
                     <p id="level">Level: 1</p>
                     <p id="experience">Experience: 0</p>
                 </div>
-            
-                <div id="gold" class="info-box">
-                  
-                </div>
+                
+                <div id="gold" class="info-box"></div>
+                <div id="gems"class="info-box"></div>
                 <button id="toggle-inventory">Show Inventory</button> 
+                <!-- Кнопка отображения текущих квестов -->
+                <button id="show-quests-btn">Show Quests</button>
                 
 
                 <div id="inventory" style="display: block;" class="info-box">
