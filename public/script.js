@@ -18,6 +18,42 @@ const itemsModal = document.getElementById('items-modal');
 const closeItemsModal = document.getElementById('close-items-modal');
 const itemsDetails = document.getElementById('items-details');
 
+const questsModal = document.getElementById('quests-modal');
+const showQuestsButton = document.getElementById('show-quests-button');
+const closeQuestsButton = document.querySelector('.close-quests');
+const questListDiv = document.getElementById('questList');
+
+// Открытие окна с квестами
+showQuestsButton.onclick = () => {
+    socket.emit('getPlayerQuests'); // Запрашиваем квесты у сервера
+    questsModal.style.display = 'block';
+};
+
+// Закрытие модального окна
+closeQuestsButton.onclick = () => {
+    questsModal.style.display = 'none';
+};
+
+// Закрытие окна при клике вне его
+window.onclick = (event) => {
+    if (event.target === questsModal) {
+        questsModal.style.display = 'none';
+    }
+};
+
+// Получаем и отображаем список квестов
+socket.on('playerQuests', (quests) => {
+    questListDiv.innerHTML = quests.map(quest => `
+        <div class="quest-item">
+            <h3>${quest.description}</h3>
+            <p>Reward: ${quest.reward.gems} gems</p>
+            <p>Status: ${quest.completed ? 'Completed' : 'In progress'}</p>
+        </div>
+    `).join('');
+});
+
+
+
 // Открытие модального окна
 showAllItemsButton.onclick = () => {
     socket.emit('getAllItems');

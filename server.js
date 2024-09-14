@@ -54,6 +54,26 @@ const itemImages = {
     'Mighty Hammer': '/images/mighty-hammer.png',
     'Mystic Tome': '/images/mystic-tome.png'
 };
+
+const questList = [
+    { type: 'buyFromPlayer', description: 'Купи предмет у игрока', reward: { gems: 10 }, completed: false },
+    { type: 'sellItem', description: 'Выстави предмет на продажу', reward: { gems: 10 }, completed: false },
+    { type: 'sellItemToPlayer', description: 'Продай предмет игроку', reward: { gems: 5 }, completed: false },
+    { type: 'buyForGold', threshold: 60, description: 'Купи на 60 gold или больше', reward: { gems: 10 }, completed: false },
+    // Добавляем квесты для уровней покупки от 100 до 1000 золота
+    { type: 'buyForGold', threshold: 100, description: 'Купи на 100 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 300, description: 'Купи на 300 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 500, description: 'Купи на 500 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 600, description: 'Купи на 600 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 700, description: 'Купи на 700 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 850, description: 'Купи на 850 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 870, description: 'Купи на 870 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 890, description: 'Купи на 890 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 900, description: 'Купи на 900 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 950, description: 'Купи на 950 gold или больше', reward: { gems: 10 }, completed: false },
+    { type: 'buyForGold', threshold: 1000, description: 'Купи на 1000 gold или больше', reward: { gems: 10 }, completed: false }
+];
+
 const LEVEL_EXPERIENCE_THRESHOLD = 150;
 const MAX_EXPERIENCE = 50;
 const MIN_EXPERIENCE = 25;
@@ -140,8 +160,9 @@ const findOrCreatePlayer = (playerId) => {
             gems: 10,
             inventory: generateRandomItems(),
             sellerName: `Player${Math.floor(Math.random() * 1000)}`,
-            experience: 0,  // Инициализируем опыт
-            level: 1         // Инициализируем уровень
+            experience: 0,
+            level: 1,
+            quests: [...questList] // Копируем квесты для нового игрока
         };
     }
     return players[playerId];
@@ -257,7 +278,13 @@ socket.on('sell', (data) => {
             priceHistory[item.name] = [];
         }
         priceHistory[item.name].push(sellPrice);
-
+// Проверяем квест на продажу предмета
+const sellQuest = player.quests.find(q => q.type === 'sellItem' && !q.completed);
+if (sellQuest) {
+    player.gems += sellQuest.reward.gems;
+    sellQuest.completed = true;
+    socket.emit('questCompleted', sellQuest.description);
+}
         // Расчет опыта
         const averagePrice = calculateAveragePrices()[item.name];
         const priceInRange = averagePrice ? (sellPrice >= averagePrice * 0.9 && sellPrice <= averagePrice * 1.1) : false;
@@ -291,38 +318,69 @@ socket.on('sell', (data) => {
 
     // Покупка предмета
     socket.on('buy', (data) => {
-    const { itemIndex } = data;
-    const buyer = players[playerId];
-    const item = market[itemIndex];
-
-    if (item && buyer.gold >= item.price) {
-        buyer.gold -= item.price;
-        buyer.inventory.push(item);
-
-        if (item.seller !== 'Special Offer') {
-            const seller = players[item.seller];
-            seller.gold += item.price;
-            io.to(item.seller).emit('update', seller);
-        }
-
-        // Расчет опыта
-        const averagePrice = calculateAveragePrices()[item.name];
-        const priceInRange = averagePrice ? (item.price >= averagePrice * 0.9 && item.price <= averagePrice * 1.1) : false;
-        const experience = priceInRange ? MAX_EXPERIENCE : MIN_EXPERIENCE;
-        updatePlayerExperience(buyer, experience);
-
-        // Удаляем предмет с рынка
-        market.splice(itemIndex, 1);
-
-            // Обновляем состояние покупателя
+        const { itemIndex } = data;
+        const buyer = players[playerId];
+        const item = market[itemIndex];
+    
+        if (item && buyer.gold >= item.price) {
+            buyer.gold -= item.price;
+            buyer.inventory.push(item);
+    
+            if (item.seller !== 'Special Offer') {
+                const seller = players[item.seller];
+                seller.gold += item.price;
+                io.to(item.seller).emit('update', seller);
+    
+                // Проверка квеста "Продать так, чтобы его купил игрок"
+                if (seller.quests) {
+                    const quest = seller.quests.find(q => q.type === 'sellItemToPlayer' && !q.completed);
+                    if (quest) {
+                        seller.gems += quest.reward.gems;
+                        quest.completed = true;
+                        io.to(item.seller).emit('update', seller);
+                        io.to(item.seller).emit('questCompleted', quest.description);
+                    }
+                }
+            }
+    
+            // Проверяем квест на покупку у игрока
+            const buyQuest = buyer.quests.find(q => q.type === 'buyFromPlayer' && !q.completed);
+            if (buyQuest && item.seller !== 'Special Offer') {
+                buyer.gems += buyQuest.reward.gems;
+                buyQuest.completed = true;
+                socket.emit('questCompleted', buyQuest.description);
+            }
+    
+            // Проверка выполнения квестов на покупку за определенную сумму
+            const buyGoldQuest = buyer.quests.find(q => q.type === 'buyForGold' && item.price >= q.threshold && !q.completed);
+            if (buyGoldQuest) {
+                buyer.gems += buyGoldQuest.reward.gems;
+                buyGoldQuest.completed = true;
+                socket.emit('questCompleted', buyGoldQuest.description);
+            }
+    
+            market.splice(itemIndex, 1);
             socket.emit('update', buyer);
-
-
-            // Обновляем рынок для всех
             io.emit('updateMarket', market);
-        
-            // Обновляем рынок для всех
-            io.emit('updateMarket', market);
+        }
+    });
+
+    socket.on('questCompleted', (questDescription) => {
+        const questDiv = document.createElement('div');
+        questDiv.className = 'quest-completed';
+        questDiv.textContent = `Quest Completed: ${questDescription}`;
+        document.body.appendChild(questDiv);
+    
+        setTimeout(() => {
+            questDiv.remove();
+        }, 5000); // Удаляем уведомление через 5 секунд
+    });
+    
+// Отправляем список квестов игрока по запросу
+socket.on('getPlayerQuests', () => {
+    const player = players[playerId];
+    if (player && player.quests) {
+        socket.emit('playerQuests', player.quests);
     }
 });
 
