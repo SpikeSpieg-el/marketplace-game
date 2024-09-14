@@ -83,7 +83,7 @@ function renderItemsList() {
     `;
 }
 
-
+//<img src="${item.image}" alt="${item.name}" style="width: 30px; height: 30px;"/>
 
 
 document.getElementById('toggle-inventory').addEventListener('click', () => {
@@ -192,8 +192,8 @@ const updateUI = (data) => {
 
 // Функция для отображения уровня и опыта
 const displayPlayerStats = (playerData) => {
-    document.getElementById('level').textContent = `Level: ${playerData.level}`;
-    document.getElementById('experience').textContent = `Experience: ${playerData.experience}`;
+    document.getElementById('level').textContent = `Level: ${playerData.level} 🧊`;
+    document.getElementById('experience').textContent = `Experience: ${playerData.experience} 💫`;
 };
 
 // Обработка обновлений от сервера

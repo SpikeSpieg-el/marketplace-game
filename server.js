@@ -16,6 +16,44 @@ const itemNames = [
     'Baseball bat', 'Crystal Ball', 'Enchanted Shield', 'Robe', 'Staff of Fire', 'Belt of Giants', 'Boots of Stealth', 'Necklace of Healing',
     'Gauntlets', 'Boots of Flight', 'Orb of Power', 'Elixir of Life', 'Crown', 'Charm of Protection', 'Mighty Hammer', 'Mystic Tome'
 ];
+const itemImages = {
+    'Sword': '/images/sword.png',
+    'Shield': '/images/shield.png',
+    'Potion': '/images/potion.png',
+    'Helmet': '/images/helmet.png',
+    'Boots': '/images/boots.png',
+    'Bow': '/images/bow.png',
+    'Arrows': '/images/arrows.png',
+    'Gloves': '/images/gloves.png',
+    'Armor': '/images/armor.png',
+    'Ring': '/images/ring.png',
+    'MagicWand': '/images/magic-wand.png',
+    'Staff': '/images/staff.png',
+    'Dagger': '/images/dagger.png',
+    'Crossbow': '/images/crossbow.png',
+    'Amulet': '/images/amulet.png',
+    'Cloak': '/images/cloak.png',
+    'Scroll': '/images/scroll.png',
+    'Boots of Speed': '/images/boots-of-speed.png',
+    'Ring of Strength': '/images/ring-of-strength.png',
+    'Helmet of Wisdom': '/images/helmet-of-wisdom.png',
+    'Baseball bat': '/images/baseball-bat.png',
+    'Crystal Ball': '/images/crystal-ball.png',
+    'Enchanted Shield': '/images/enchanted-shield.png',
+    'Robe': '/images/robe.png',
+    'Staff of Fire': '/images/staff-of-fire.png',
+    'Belt of Giants': '/images/belt-of-giants.png',
+    'Boots of Stealth': '/images/boots-of-stealth.png',
+    'Necklace of Healing': '/images/necklace-of-healing.png',
+    'Gauntlets': '/images/gauntlets.png',
+    'Boots of Flight': '/images/boots-of-flight.png',
+    'Orb of Power': '/images/orb-of-power.png',
+    'Elixir of Life': '/images/elixir-of-life.png',
+    'Crown': '/images/crown.png',
+    'Charm of Protection': '/images/charm-of-protection.png',
+    'Mighty Hammer': '/images/mighty-hammer.png',
+    'Mystic Tome': '/images/mystic-tome.png'
+};
 const LEVEL_EXPERIENCE_THRESHOLD = 150;
 const MAX_EXPERIENCE = 50;
 const MIN_EXPERIENCE = 25;
@@ -65,6 +103,7 @@ let lastPrices = {}; // Для отслеживания предыдущих с�
 // Функция для расчета средней цены предмета и сравнения с предыдущей ценой
 const calculateAveragePrices = () => {
     const averagePrices = {};
+    
     itemNames.forEach(item => {
         const history = priceHistory[item] || [];
         const averagePrice = history.length > 0 ? history.reduce((sum, p) => sum + p, 0) / history.length : null;
@@ -82,6 +121,7 @@ const calculateAveragePrices = () => {
         averagePrices[item] = {
             price: averagePrice,
             change: priceChange
+            
         };
 
         // Обновляем последнюю цену
@@ -107,44 +147,7 @@ const findOrCreatePlayer = (playerId) => {
 };
 
 
-const itemImages = {
-    'Sword': '/images/sword.png',
-    'Shield': '/images/shield.png',
-    'Potion': '/images/potion.png',
-    'Helmet': '/images/helmet.png',
-    'Boots': '/images/boots.png',
-    'Bow': '/images/bow.png',
-    'Arrows': '/images/arrows.png',
-    'Gloves': '/images/gloves.png',
-    'Armor': '/images/armor.png',
-    'Ring': '/images/ring.png',
-    'MagicWand': '/images/magic-wand.png',
-    'Staff': '/images/staff.png',
-    'Dagger': '/images/dagger.png',
-    'Crossbow': '/images/crossbow.png',
-    'Amulet': '/images/amulet.png',
-    'Cloak': '/images/cloak.png',
-    'Scroll': '/images/scroll.png',
-    'Boots of Speed': '/images/boots-of-speed.png',
-    'Ring of Strength': '/images/ring-of-strength.png',
-    'Helmet of Wisdom': '/images/helmet-of-wisdom.png',
-    'Baseball bat': '/images/baseball-bat.png',
-    'Crystal Ball': '/images/crystal-ball.png',
-    'Enchanted Shield': '/images/enchanted-shield.png',
-    'Robe': '/images/robe.png',
-    'Staff of Fire': '/images/staff-of-fire.png',
-    'Belt of Giants': '/images/belt-of-giants.png',
-    'Boots of Stealth': '/images/boots-of-stealth.png',
-    'Necklace of Healing': '/images/necklace-of-healing.png',
-    'Gauntlets': '/images/gauntlets.png',
-    'Boots of Flight': '/images/boots-of-flight.png',
-    'Orb of Power': '/images/orb-of-power.png',
-    'Elixir of Life': '/images/elixir-of-life.png',
-    'Crown': '/images/crown.png',
-    'Charm of Protection': '/images/charm-of-protection.png',
-    'Mighty Hammer': '/images/mighty-hammer.png',
-    'Mystic Tome': '/images/mystic-tome.png'
-};
+
 
 const addSpecialOffer = () => {
     const numberOfOffers = Math.floor(Math.random() * 8) + 3; // случайное количество от 3 до 10
@@ -190,7 +193,7 @@ setInterval(() => {
     addSpecialOffer();
 }, 60000);
 
-
+/*
 // Функция для сброса состояния игры
 const resetGame = () => {
     players = {}; // Сброс состояния игроков
@@ -204,6 +207,7 @@ const resetGame = () => {
 
     io.emit('updateMarket', market); // Обновление рынка
 };
+*/
 
 // Обработка событий
 app.use(cookieParser());
@@ -322,15 +326,28 @@ socket.on('sell', (data) => {
 });
 
     // Сброс состояния игры
+/*    
     socket.on('resetGame', () => {
         resetGame();
     });
-
+*/
     socket.on('disconnect', () => {
         console.log('Player disconnected:', playerId);
     });
+    
 });
+/* 
+добавить торговца с уникальными предметами
 
+прокачка предметов 3 предмета в 1 до 10
+
+доп валюта алмазы и покупка у торговца уникальные предметы
+
+7 дневний вход и награды
+
+
+
+*/
 
 
 server.listen(PORT, () => {
