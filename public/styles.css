@@ -148,27 +148,17 @@ footer {
     font-size: 28px;
     font-weight: bold;
 }
-
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-}
-
-.close {
+.close-quests {
     color: #aaa;
     float: right;
     font-size: 28px;
     font-weight: bold;
+}
+.close-quests:hover,
+.close-quests:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
 }
 
 .close:hover,

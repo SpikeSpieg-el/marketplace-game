@@ -97,22 +97,9 @@ const generateRandomItems = () => {
         const name = itemNames[Math.floor(Math.random() * itemNames.length)];
         items.push({
             name: name,
+            level_item: 1,  // Инициализируем уровень предмета
             price: Math.floor(Math.random() * 100) + 1, // случайная стоимость от 1 до 100
             image: `images/${name.toLowerCase().replace(/\s+/g, '-')}.png` // путь к изображению
-        });
-    }
-    return items;
-};
-
-
-// Генерация начальных предметов для рынка
-const generateMarketItems = () => {
-    let items = [];
-    for (let i = 0; i < 10; i++) {
-        items.push({
-            name: itemNames[Math.floor(Math.random() * itemNames.length)], // Теперь будут новые предметы
-            price: Math.floor(Math.random() * 20) + 20, // случайная стоимость от 20 до 40
-            seller: 'exampleSeller', // Можно заменить на идентификатор продавца
         });
     }
     return items;
@@ -384,17 +371,73 @@ socket.on('getPlayerQuests', () => {
     }
 });
 
+
+socket.on('mergeItems', (data) => {
+    const { itemName, playerId } = data;
+
+    const player = findOrCreatePlayer(playerId);
+
+    if (!player) {
+        socket.emit('error', 'Player not found.');
+        return;
+    }
+
+    // Фильтруем предметы по имени
+    const itemsToMerge = player.inventory.filter(item => item.name.trim() === itemName.trim());
+
+    if (itemsToMerge.length > 1) {
+        // Находим первый предмет
+        const item = itemsToMerge[0];
+        const newLevel = item.level_item + 1;
+
+        if (newLevel <= 10) {
+            // Увеличиваем уровень первого предмета
+            item.level_item = newLevel;
+
+            // Удаляем остальные предметы с таким же именем
+            for (let i = 1; i < itemsToMerge.length; i++) {
+                const itemToRemove = itemsToMerge[i];
+                const itemIndex = player.inventory.indexOf(itemToRemove);
+                if (itemIndex !== -1) {
+                    player.inventory.splice(itemIndex, 1);
+                }
+            }
+
+            // Начисляем гемы в зависимости от нового уровня предмета
+            player.gems += newLevel;
+
+            // Отправляем обновленное состояние игрока на клиент
+            socket.emit('update', player);
+        } else {
+            socket.emit('error', 'Max level reached for this item.');
+        }
+    } else {
+        socket.emit('error', 'Not enough items to merge.');
+    }
+});
+
+
+
+
+
+
+    socket.on('disconnect', () => {
+        console.log('Player disconnected:', playerId);
+    });
+    
+});
+
+
+
+server.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
 // Сброс состояния игры
 /*    
     socket.on('resetGame', () => {
         resetGame();
     });
 */
-    socket.on('disconnect', () => {
-        console.log('Player disconnected:', playerId);
-    });
-    
-});
 /* 
 добавить торговца с уникальными предметами
 
@@ -407,8 +450,3 @@ socket.on('getPlayerQuests', () => {
 
 
 */
-
-
-server.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});

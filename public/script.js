@@ -1,6 +1,8 @@
 const socket = io();
 
 let currentItemIndex;
+let currentItemName; // Для хранения имени предмета
+let currentItemAveragePrice; // Для хранения средней цены предмета
 
 // Обработчики для модального окна продажи
 const modal = document.getElementById('price-modal');
@@ -23,6 +25,19 @@ const showQuestsButton = document.getElementById('show-quests-button');
 const closeQuestsButton = document.querySelector('.close-quests');
 const questListDiv = document.getElementById('questList');
 
+// Закрытие окна при клике вне его
+window.onclick = (event) => {
+    if (event.target === questsModal) {
+        questsModal.style.display = 'none';
+    } else if (event.target === itemsModal) {
+        itemsModal.style.display = 'none';
+    } else if (event.target === modal) {
+        modal.style.display = 'none';
+    } else if (event.target === priceHistoryModal) {
+        priceHistoryModal.style.display = 'none';
+    }
+};
+
 // Открытие окна с квестами
 showQuestsButton.onclick = () => {
     socket.emit('getPlayerQuests'); // Запрашиваем квесты у сервера
@@ -32,13 +47,6 @@ showQuestsButton.onclick = () => {
 // Закрытие модального окна
 closeQuestsButton.onclick = () => {
     questsModal.style.display = 'none';
-};
-
-// Закрытие окна при клике вне его
-window.onclick = (event) => {
-    if (event.target === questsModal) {
-        questsModal.style.display = 'none';
-    }
 };
 
 // Получаем и отображаем список квестов
@@ -52,23 +60,28 @@ socket.on('playerQuests', (quests) => {
     `).join('');
 });
 
+// Функция для объединения предметов
+const mergeItems = (itemName) => {
+    const playerId = getCookie('playerId'); // Предполагается, что playerId хранится в cookie
+    // Отправляем запрос на сервер для объединения предметов
+    socket.emit('mergeItems', { itemName });
+};
 
+// Обработчик для объединения предметов
+socket.on('mergeResult', (result) => {
+    if (result.success) {
+        // Обновляем инвентарь и другие данные после успешного объединения
+        updateUI(result.updatedData);
+        alert('Items merged successfully!');
+    } else {
+        alert(result.message || 'An error occurred while merging items.');
+    }
+});
 
-// Открытие модального окна
+// Открытие модального окна с предметами
 showAllItemsButton.onclick = () => {
     socket.emit('getAllItems');
     itemsModal.style.display = 'block';
-};
-
-// Закрытие модального окна
-closeItemsModal.onclick = () => {
-    itemsModal.style.display = 'none';
-};
-
-window.onclick = (event) => {
-    if (event.target === itemsModal) {
-        itemsModal.style.display = 'none';
-    }
 };
 
 let allItemsState = {}; // Локальное состояние для всех предметов
@@ -119,9 +132,6 @@ function renderItemsList() {
     `;
 }
 
-//<img src="${item.image}" alt="${item.name}" style="width: 30px; height: 30px;"/>
-
-
 document.getElementById('toggle-inventory').addEventListener('click', () => {
     const inventoryDiv = document.getElementById('inventory');
     const toggleButton = document.getElementById('toggle-inventory');
@@ -135,21 +145,12 @@ document.getElementById('toggle-inventory').addEventListener('click', () => {
     }
 });
 
-
 closeModal.onclick = () => {
     modal.style.display = 'none';
 };
 
 closePriceHistoryModal.onclick = () => {
     priceHistoryModal.style.display = 'none';
-};
-
-window.onclick = (event) => {
-    if (event.target === modal) {
-        modal.style.display = 'none';
-    } else if (event.target === priceHistoryModal) {
-        priceHistoryModal.style.display = 'none';
-    }
 };
 
 submitPriceButton.onclick = () => {
@@ -179,10 +180,7 @@ socket.on('priceHistory', (data) => {
     priceHistoryModal.style.display = 'block';
 });
 
-
-let currentItemName; // Для хранения имени предмета
-let currentItemAveragePrice; // Для хранения средней цены предмета
-
+// Функция для обновления интерфейса
 const updateUI = (data) => {
     document.getElementById('gold').textContent = `Gold: ${data.gold} 🪙`;
     document.getElementById('gems').textContent = `Gems: ${data.gems} 💎`;
@@ -193,12 +191,23 @@ const updateUI = (data) => {
     const inventoryDiv = document.getElementById('inventory');
     inventoryDiv.innerHTML = '<h2>Your Inventory</h2>';
 
+    // Создаем объект для подсчета количества каждого предмета
+    const itemCounts = {};
+
+    // Подсчитываем количество одинаковых предметов
+    data.inventory.forEach((item) => {
+        if (!itemCounts[item.name]) {
+            itemCounts[item.name] = 0;
+        }
+        itemCounts[item.name]++;
+    });
+
     data.inventory.forEach((item, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'inventory-item';
         itemDiv.innerHTML = `
             <img src="${item.image}" alt="${item.name}" style="width: 30px; height: 30px;"/>
-            ${item.name} - ${item.price} 🪙
+            ${item.name} - ${item.price} 🪙 (Level: ${item.level_item || 1})  <!-- Изменено на item.level_item -->
         `;
 
         const sellButton = document.createElement('button');
@@ -219,8 +228,17 @@ const updateUI = (data) => {
             showPriceHistory(item.name);
         };
 
-        sellButton.style.marginLeft = '20px';
+        // Проверка, есть ли несколько одинаковых предметов для объединения
+        if (itemCounts[item.name] > 1) {
+            const mergeButton = document.createElement('button');
+            mergeButton.textContent = 'Merge';
+            mergeButton.onclick = () => {
+                mergeItems(item.name);
+            };
+            itemDiv.appendChild(mergeButton);
+        }
 
+        sellButton.style.marginLeft = '20px';
         itemDiv.appendChild(sellButton);
         itemDiv.appendChild(historyButton);
         inventoryDiv.appendChild(itemDiv);
@@ -239,34 +257,12 @@ socket.on('update', (data) => {
     displayPlayerStats(data);
 });
 
-submitPriceButton.onclick = () => {
-    const sellPrice = parseInt(priceInput.value);
-    if (!isNaN(sellPrice) && sellPrice > 0) {
-        socket.emit('sell', { itemIndex: currentItemIndex, itemName: currentItemName, sellPrice });
-        modal.style.display = 'none';
-    } else {
-        alert('Please enter a valid price.');
-    }
-};
-
-
-submitPriceButton.onclick = () => {
-    const sellPrice = parseInt(priceInput.value);
-    if (!isNaN(sellPrice) && sellPrice > 0) {
-        // Отправляем как имя предмета, так и его цену
-        socket.emit('sell', { itemIndex: currentItemIndex, itemName: currentItemName, sellPrice });
-        modal.style.display = 'none';
-    } else {
-        alert('Please enter a valid price.');
-    }
-};
-
-
 // Получение cookie по имени
 function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
+    return null; // Если cookie не найден
 }
 
 socket.on('setCookie', (data) => {
@@ -277,8 +273,8 @@ socket.on('init', (data) => {
     updateUI(data);
 });
 
-socket.on('update', (data) => {
-    updateUI(data);
+socket.on('error', (message) => {
+    alert(message); // Показываем сообщение об ошибке
 });
 
 socket.on('updateMarket', (marketItems) => {
@@ -316,18 +312,3 @@ socket.on('updateMarket', (marketItems) => {
         }, 10); // Небольшая задержка для активации анимации
     });
 });
-
-
-
-// Пример генерации начальных данных с использованием случайных имен и цен
-const generateInitialItems = () => {
-    const items = [];
-    for (let i = 0; i < 10; i++) {
-        items.push({
-            name: getRandomName(),
-            price: getRandomPrice(),
-            seller: 'exampleSeller' // Можно заменить на идентификатор продавца
-        });
-    }
-    return items;
-};
