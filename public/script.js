@@ -149,7 +149,7 @@ let currentItemAveragePrice; // Для хранения средней цены 
 
 const updateUI = (data) => {
     document.getElementById('gold').textContent = `Gold: ${data.gold} 🪙`;
-    document.getElementById('player-name').textContent = `Name: ${data.sellerName} `;
+    document.getElementById('player-name').textContent = `Name: ${data.sellerName}`;
     document.getElementById('level').textContent = `Level: ${data.level}`;
     document.getElementById('experience').textContent = `Experience: ${data.experience}`;
 
@@ -159,7 +159,10 @@ const updateUI = (data) => {
     data.inventory.forEach((item, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'inventory-item';
-        itemDiv.innerHTML = `${item.name} - ${item.price} 🪙`;
+        itemDiv.innerHTML = `
+            <img src="${item.image}" alt="${item.name}" style="width: 30px; height: 30px;"/>
+            ${item.name} - ${item.price} 🪙
+        `;
 
         const sellButton = document.createElement('button');
         sellButton.textContent = 'Sell';
@@ -186,6 +189,7 @@ const updateUI = (data) => {
         inventoryDiv.appendChild(itemDiv);
     });
 };
+
 // Функция для отображения уровня и опыта
 const displayPlayerStats = (playerData) => {
     document.getElementById('level').textContent = `Level: ${playerData.level}`;
@@ -250,6 +254,7 @@ socket.on('updateMarket', (marketItems) => {
         const itemDiv = document.createElement('div');
         itemDiv.className = item.seller === 'Special Offer' ? 'market-item special-offer' : 'market-item';
         itemDiv.innerHTML = `
+            <img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px;"/>
             <span>${item.name} - ${item.price} 🪙</span>
             ${item.seller === 'Special Offer' ? `<div>Base Price: ${item.basePrice} 🪙</div><div>Discount: ${item.discount}%</div>` : ''}
             <div> (Seller: ${item.seller})</div>
@@ -273,6 +278,7 @@ socket.on('updateMarket', (marketItems) => {
         }, 10); // Небольшая задержка для активации анимации
     });
 });
+
 
 
 // Пример генерации начальных данных с использованием случайных имен и цен

@@ -232,6 +232,8 @@ footer {
 
 #inventory {
     transition: opacity 0.5s ease;
+    display: flex;
+    flex-wrap: wrap;
 }
 
 #inventory.hidden {
@@ -245,6 +247,22 @@ footer {
 }
 .price-modal-enter_price{
     padding: 25px;
+}
+.inventory-item {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.inventory-item img {
+    margin-right: 10px;
+    object-fit: cover;
+}
+
+.inventory-item button {
+    margin-left: 20px;
 }
 /* Стиль для инпута */
 #price-input {

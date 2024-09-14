@@ -13,7 +13,7 @@ const PORT = 3000;
 const itemNames = [
     'Sword', 'Shield', 'Potion', 'Helmet', 'Boots', 'Bow', 'Arrows', 'Gloves', 'Armor', 'Ring',
     'MagicWand', 'Staff', 'Dagger', 'Crossbow', 'Amulet', 'Cloak', 'Scroll', 'Boots of Speed', 'Ring of Strength', 'Helmet of Wisdom',
-    'Giant’s Club', 'Crystal Ball', 'Enchanted Shield', 'Robe', 'Staff of Fire', 'Belt of Giants', 'Boots of Stealth', 'Necklace of Healing',
+    'Baseball bat', 'Crystal Ball', 'Enchanted Shield', 'Robe', 'Staff of Fire', 'Belt of Giants', 'Boots of Stealth', 'Necklace of Healing',
     'Gauntlets', 'Boots of Flight', 'Orb of Power', 'Elixir of Life', 'Crown', 'Charm of Protection', 'Mighty Hammer', 'Mystic Tome'
 ];
 const LEVEL_EXPERIENCE_THRESHOLD = 150;
@@ -36,13 +36,16 @@ let priceHistory = {};
 const generateRandomItems = () => {
     let items = [];
     for (let i = 0; i < 10; i++) {
+        const name = itemNames[Math.floor(Math.random() * itemNames.length)];
         items.push({
-            name: itemNames[Math.floor(Math.random() * itemNames.length)], // Выбираем случайное имя из списка
+            name: name,
             price: Math.floor(Math.random() * 100) + 1, // случайная стоимость от 1 до 100
+            image: `images/${name.toLowerCase().replace(/\s+/g, '-')}.png` // путь к изображению
         });
     }
     return items;
 };
+
 
 // Генерация начальных предметов для рынка
 const generateMarketItems = () => {
@@ -104,9 +107,50 @@ const findOrCreatePlayer = (playerId) => {
 };
 
 
-// Функция добавления предмета по акции
+const itemImages = {
+    'Sword': '/images/sword.png',
+    'Shield': '/images/shield.png',
+    'Potion': '/images/potion.png',
+    'Helmet': '/images/helmet.png',
+    'Boots': '/images/boots.png',
+    'Bow': '/images/bow.png',
+    'Arrows': '/images/arrows.png',
+    'Gloves': '/images/gloves.png',
+    'Armor': '/images/armor.png',
+    'Ring': '/images/ring.png',
+    'MagicWand': '/images/magic_wand.png',
+    'Staff': '/images/staff.png',
+    'Dagger': '/images/dagger.png',
+    'Crossbow': '/images/crossbow.png',
+    'Amulet': '/images/amulet.png',
+    'Cloak': '/images/cloak.png',
+    'Scroll': '/images/scroll.png',
+    'Boots of Speed': '/images/boots-of-speed.png',
+    'Ring of Strength': '/images/ring-of-strength.png',
+    'Helmet of Wisdom': '/images/helmet-of-wisdom.png',
+    'Baseball bat': '/images/baseball-bat.png',
+    'Crystal Ball': '/images/crystal-ball.png',
+    'Enchanted Shield': '/images/enchanted-shield.png',
+    'Robe': '/images/robe.png',
+    'Staff of Fire': '/images/staff-of-fire.png',
+    'Belt of Giants': '/images/belt-of-giants.png',
+    'Boots of Stealth': '/images/boots-of-stealth.png',
+    'Necklace of Healing': '/images/necklace-of-healing.png',
+    'Gauntlets': '/images/gauntlets.png',
+    'Boots of Flight': '/images/boots-of-flight.png',
+    'Orb of Power': '/images/orb-of-power.png',
+    'Elixir of Life': '/images/elixir-of-life.png',
+    'Crown': '/images/crown.png',
+    'Charm of Protection': '/images/charm-of-protection.png',
+    'Mighty Hammer': '/images/mighty-hammer.png',
+    'Mystic Tome': '/images/mystic-tome.png'
+};
+
 const addSpecialOffer = () => {
-    for (let i = 0; i < 3; i++) { // Добавляем 5 специальных предложений
+    const numberOfOffers = Math.floor(Math.random() * 8) + 3; // случайное количество от 3 до 10
+    const newOffers = [];
+
+    for (let i = 0; i < numberOfOffers; i++) {
         const itemName = itemNames[Math.floor(Math.random() * itemNames.length)];
         let basePrice = Math.floor(Math.random() * 40) + 30; // случайная стоимость от 30 до 70
         let discount = Math.floor(Math.random() * 51) + 10; // случайная скидка от 10% до 60%
@@ -124,12 +168,14 @@ const addSpecialOffer = () => {
             price: discountedPrice,
             basePrice: basePrice, // Добавляем базовую цену
             discount: discount, // Добавляем информацию о скидке
-            seller: 'Special Offer'
+            seller: 'Special Offer',
+            image: itemImages[itemName] // Добавляем URL изображения
         };
 
-        market.push(item);
+        newOffers.push(item); // Добавляем предмет в список новых акций
     }
 
+    market = [...newOffers, ...market]; // Добавляем акции в начало рынка
     io.emit('updateMarket', market);
 
     // Удаляем предметы через 60 секунд
