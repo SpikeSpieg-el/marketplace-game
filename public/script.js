@@ -54,8 +54,10 @@ socket.on('playerQuests', (quests) => {
     questListDiv.innerHTML = quests.map(quest => `
         <div class="quest-item">
             <h3>${quest.description}</h3>
-            <p>Reward: ${quest.reward.gems} gems</p>
-            <p>Status: ${quest.completed ? 'Completed' : 'In progress'}</p>
+            <p>Награда: ${quest.reward.gems} gems</p>
+            <p style="color: ${quest.completed ? 'green' : 'black'};">
+                Status: ${quest.completed ? 'Выполнено' : ' В процессе'}
+            </p>
         </div>
     `).join('');
 });
@@ -120,13 +122,13 @@ socket.on('allItems', (data) => {
 // Функция для рендера списка предметов
 function renderItemsList() {
     itemsDetails.innerHTML = `
-        <h3>Items List</h3>
+        <h3>Лист всех предметов</h3>
         <ul>
             ${Object.keys(allItemsState).map(item => {
                 const priceData = allItemsState[item];
                 const priceText = priceData.price ? priceData.price.toFixed(1) + ' 🪙' : 'N/A';
                 const changeText = priceData.change || ''; // Добавляем стрелку
-                return `<li>${item} - Average Price: ${priceText} ${changeText}</li>`;
+                return `<li>${item} - Средняя цена: ${priceText} ${changeText}</li>`;
             }).join('')}
         </ul>
     `;
@@ -138,10 +140,10 @@ document.getElementById('toggle-inventory').addEventListener('click', () => {
 
     if (inventoryDiv.style.display === 'none') {
         inventoryDiv.style.display = 'block';
-        toggleButton.textContent = 'Hide Inventory'; // Меняем текст кнопки
+        toggleButton.textContent = 'Спрятать инвентарь'; // Меняем текст кнопки
     } else {
         inventoryDiv.style.display = 'none';
-        toggleButton.textContent = 'Show Inventory'; // Меняем текст кнопки
+        toggleButton.textContent = 'Показать инвентарь'; // Меняем текст кнопки
     }
 });
 
@@ -159,7 +161,7 @@ submitPriceButton.onclick = () => {
         socket.emit('sell', { itemIndex: currentItemIndex, sellPrice });
         modal.style.display = 'none';
     } else {
-        alert('Please enter a valid price.');
+        alert('Пожалуйста напиши верную цену.');
     }
 };
 
@@ -172,7 +174,7 @@ socket.on('priceHistory', (data) => {
     const { itemName, history, averagePrice } = data;
     priceHistoryDetails.innerHTML = `
         <h3>${itemName}</h3>
-        <p>Average Price: ${parseFloat(averagePrice).toFixed(1)} gold</p>
+        <p>Средняя цена: ${parseFloat(averagePrice).toFixed(1)} gold</p>
         <ul>
             ${history.map(price => `<li>${parseFloat(price).toFixed(1)} gold</li>`).join('')}
         </ul>
@@ -184,12 +186,12 @@ socket.on('priceHistory', (data) => {
 const updateUI = (data) => {
     document.getElementById('gold').textContent = `Gold: ${data.gold} 🪙`;
     document.getElementById('gems').textContent = `Gems: ${data.gems} 💎`;
-    document.getElementById('player-name').textContent = `Name: ${data.sellerName}`;
-    document.getElementById('level').textContent = `Level: ${data.level}`;
-    document.getElementById('experience').textContent = `Experience: ${data.experience}`;
+    document.getElementById('player-name').textContent = `Имя: ${data.sellerName}`;
+    document.getElementById('level').textContent = `Уровнь: ${data.level}`;
+    document.getElementById('experience').textContent = `Опыт: ${data.experience}`;
 
     const inventoryDiv = document.getElementById('inventory');
-    inventoryDiv.innerHTML = '<h2>Your Inventory</h2>';
+    inventoryDiv.innerHTML = '<h2>Твой инвентарь</h2>';
 
     // Создаем объект для подсчета количества каждого предмета
     const itemCounts = {};
@@ -207,7 +209,7 @@ const updateUI = (data) => {
         itemDiv.className = 'inventory-item';
         itemDiv.innerHTML = `
             <img src="${item.image}" alt="${item.name}" style="width: 30px; height: 30px;"/>
-            ${item.name} - ${item.price} 🪙 (Level: ${item.level_item || 1})  <!-- Изменено на item.level_item -->
+            ${item.name} - ${item.price} 🪙 (Level: ${item.level_item || 1}) 
         `;
 
         const sellButton = document.createElement('button');
@@ -215,15 +217,15 @@ const updateUI = (data) => {
         sellButton.onclick = () => {
             currentItemIndex = index;  // Сохраняем индекс предмета
             currentItemName = item.name;  // Сохраняем имя предмета
-            currentItemAveragePrice = allItemsState[item.name]?.price || 'N/A'; // Сохраняем среднюю цену
+            currentItemAveragePrice = allItemsState[item.name]?.price || 'предмет не продали'; // Сохраняем среднюю цену
             document.getElementById('modal-item-name').textContent = `Sell ${item.name}`;  // Обновляем название предмета
-            document.getElementById('modal-average-price').textContent = `Average Market Price: ${currentItemAveragePrice} 🪙`; // Отображаем среднюю цену
+            document.getElementById('modal-average-price').textContent = `Средняя цена на маркете: ${currentItemAveragePrice} 🪙`; // Отображаем среднюю цену
             priceInput.value = '';  // Очищаем поле ввода
             modal.style.display = 'block';  // Показываем модальное окно
         };
 
         const historyButton = document.createElement('button');
-        historyButton.textContent = 'Price History';
+        historyButton.textContent = 'История цены';
         historyButton.onclick = () => {
             showPriceHistory(item.name);
         };
@@ -247,8 +249,8 @@ const updateUI = (data) => {
 
 // Функция для отображения уровня и опыта
 const displayPlayerStats = (playerData) => {
-    document.getElementById('level').textContent = `Level: ${playerData.level} 🧊`;
-    document.getElementById('experience').textContent = `Experience: ${playerData.experience} 💫`;
+    document.getElementById('level').textContent = `Уровень: ${playerData.level} 🧊`;
+    document.getElementById('experience').textContent = `Опыт: ${playerData.experience} 💫`;
 };
 
 // Обработка обновлений от сервера
@@ -289,15 +291,15 @@ socket.on('updateMarket', (marketItems) => {
         itemDiv.innerHTML = `
             <span><img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; float: left;"/>
             <span>${item.name} - ${item.price} 🪙</span>
-            ${item.seller === 'Special Offer' ? `<div>Base Price: ${item.basePrice} 🪙</div><div>Discount: ${item.discount}%</div>` : ''}
-            <div> (Seller: ${item.seller})</div>
+            ${item.seller === 'Special Offer' ? `<div>Базовая цена: ${item.basePrice} 🪙</div><div>Discount: ${item.discount}%</div>` : ''}
+            <div> (Продавец: ${item.seller})</div>
             </span>
         `;
 
         if (item.seller !== currentPlayerId) {
             const buyButton = document.createElement('button');
             buyButton.className = 'buy-button';
-            buyButton.textContent = 'Buy';
+            buyButton.textContent = 'Купить';
             buyButton.onclick = () => {
                 socket.emit('buy', { itemIndex: index });
             };
