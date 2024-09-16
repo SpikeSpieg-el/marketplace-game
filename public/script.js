@@ -291,7 +291,7 @@ socket.on('updateMarket', (marketItems) => {
         itemDiv.innerHTML = `
             <span><img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; float: left;"/>
             <span>${item.name} - ${item.price} 🪙</span>
-            ${item.seller === 'Special Offer' ? `<div>Базовая цена: ${item.basePrice} 🪙</div><div>Discount: ${item.discount}%</div>` : ''}
+            ${item.seller === 'Special Offer' ? `<div>Базовая цена: ${item.basePrice} 🪙</div><div>Скидка: ${item.discount}%</div>` : ''}
             <div> (Продавец: ${item.seller})</div>
             </span>
         `;
